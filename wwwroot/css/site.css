@@ -66,3 +66,27 @@ a, .btn-link {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
+.nav-lock-group {
+    display: flex;
+    justify-content: space-between;
+}
+    
+.nav-lock-unit {
+    display: flex;
+    flex-direction: column;
+    margin-left: 25px;
+    margin-right: 25px;
+    width: 30%;
+}
+
+@media screen and (max-width: 1024px){
+    .nav-lock-group {
+        flex-direction: column;
+    }
+    
+    .nav-lock-unit {
+        margin-left: initial;
+        margin-right: initial;
+        width: 100%;
+    }
+}

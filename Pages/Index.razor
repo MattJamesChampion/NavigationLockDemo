@@ -1,9 +1,86 @@
 ﻿@page "/"
+@using NavigationLockDemo.Helpers
 
-<PageTitle>Index</PageTitle>
+@code {
+    [Inject] NavigationManager? NavigationManager { get; set; }
+    private bool ConfirmExternalNavigation { get; set; } = true;
+    private bool AllowNavigation { get; set; }
+    private List<IEnumerable<string>> LogMessageGroups { get; } = new();
 
-<h1>Hello, world!</h1>
+    private void LazyLog(params string[] logStrings)
+    {
+        //Just like logging things properly, except for all of the good parts
+        LogMessageGroups.Add(logStrings);
+        
+        foreach (var logString in logStrings)
+        {
+            Console.WriteLine(logString);
+        }
+        
+        Console.WriteLine();
+    }
+    
+    private void OnBeforeInternalNavigation(LocationChangingContext locationChangingContext)
+    {
+        LazyLog($"ConfirmExternalNavigation: {ConfirmExternalNavigation}",
+            $"AllowNavigation: {AllowNavigation}",
+            $"TargetLocation: {locationChangingContext.TargetLocation}",
+            $"IsNavigationIntercepted: {locationChangingContext.IsNavigationIntercepted}",
+            $"HistoryEntryState: {locationChangingContext.HistoryEntryState}");
 
-Welcome to your new app.
+        if (!AllowNavigation) locationChangingContext.PreventNavigation();
+    }
+}
 
-<SurveyPrompt Title="How is Blazor working for you?"/>
+<NavigationLock ConfirmExternalNavigation="@ConfirmExternalNavigation" OnBeforeInternalNavigation="@OnBeforeInternalNavigation"></NavigationLock>
+
+<PageTitle>Navigation Lock Demo</PageTitle>
+
+<h3>Navigation Lock Demo</h3>
+
+<div class="nav-lock-group">
+    <div class="nav-lock-unit">
+        <h4>Controls</h4>
+        <div>
+            <label for="confirm-external-navigation-checkbox">Confirm External Navigation</label>
+            <input id="confirm-external-navigation-checkbox" type="checkbox" @bind="@ConfirmExternalNavigation">
+        </div>
+    
+        <div>
+            <label for="allow-navigation-checkbox">Allow Navigation</label>
+            <input id="allow-navigation-checkbox" type="checkbox" @bind="@AllowNavigation">
+        </div>
+    </div>
+    
+    <div class="nav-lock-unit">
+        <h4>Internal Site</h4>
+        <a href="/OtherInternalPage">A plain ol' link to the other internal page</a>
+        <button onclick="@(() => NavigationManager?.NavigateTo("/OtherInternalPage", new NavigationOptions { HistoryEntryState = "Other Internal Page State" }))">Navigation.NavigateTo()</button>
+    </div>
+    
+    <div class="nav-lock-unit">
+        <h4>External Site (Matt's Blog)</h4>
+        <a href="@StaticStrings.BlogUrl">Oh hey, it's my blog</a>
+        <button onclick="@(() => NavigationManager?.NavigateTo(StaticStrings.BlogUrl, new NavigationOptions { HistoryEntryState = "Blog State!"}))">
+            Navigation.NavigateTo()
+        </button>
+    </div>
+    
+</div>
+
+@if (LogMessageGroups.Any())
+{
+    <hr/>
+
+    <div class="log-messages">
+        @foreach (var logMessages in LogMessageGroups)
+        {
+            <ul>
+                @foreach (var logMessage in logMessages)
+                {
+                    <li>@logMessage</li>
+                }
+            </ul>
+        }
+    </div>
+}
