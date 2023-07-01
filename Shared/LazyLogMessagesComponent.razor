@@ -1,0 +1,20 @@
+﻿@if (LogMessageGroups.Any())
+{
+    <hr/>
+
+    <div class="log-messages">
+        @foreach (var logMessages in LogMessageGroups)
+        {
+            <ul>
+                @foreach (var logMessage in logMessages)
+                {
+                    <li>@logMessage</li>
+                }
+            </ul>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public List<IEnumerable<string>> LogMessageGroups { get; set; } = new();
+}

@@ -1,0 +1,60 @@
+﻿@page "/NavigationLock"
+@using NavigationLockDemo.Helpers
+
+@code {
+    [Inject] NavigationManager? NavigationManager { get; set; }
+    private bool ConfirmExternalNavigation { get; set; } = true;
+    private bool AllowNavigation { get; set; }
+    private List<IEnumerable<string>> LogMessageGroups { get; } = new();
+
+    private void OnBeforeInternalNavigation(LocationChangingContext locationChangingContext)
+    {
+        LogMessageGroups.LazyLog($"ConfirmExternalNavigation: {ConfirmExternalNavigation}",
+            $"AllowNavigation: {AllowNavigation}",
+            $"TargetLocation: {locationChangingContext.TargetLocation}",
+            $"IsNavigationIntercepted: {locationChangingContext.IsNavigationIntercepted}",
+            $"HistoryEntryState: {locationChangingContext.HistoryEntryState}");
+
+        InvokeAsync(StateHasChanged);
+        
+        if (!AllowNavigation) locationChangingContext.PreventNavigation();
+    }
+}
+
+<NavigationLock ConfirmExternalNavigation="@ConfirmExternalNavigation" OnBeforeInternalNavigation="@OnBeforeInternalNavigation"></NavigationLock>
+
+<PageTitle>Navigation Lock Demo</PageTitle>
+
+<h3>Navigation Lock Demo</h3>
+
+<div class="nav-lock-group">
+    <div class="nav-lock-unit">
+        <h4>Controls</h4>
+        <div>
+            <label for="confirm-external-navigation-checkbox">Confirm External Navigation</label>
+            <input id="confirm-external-navigation-checkbox" type="checkbox" @bind="@ConfirmExternalNavigation">
+        </div>
+    
+        <div>
+            <label for="allow-navigation-checkbox">Allow Navigation</label>
+            <input id="allow-navigation-checkbox" type="checkbox" @bind="@AllowNavigation">
+        </div>
+    </div>
+    
+    <div class="nav-lock-unit">
+        <h4>Internal Site</h4>
+        <a href="/OtherInternalPage">A plain ol' link to another internal page</a>
+        <button onclick="@(() => NavigationManager?.NavigateTo("/OtherInternalPage", new NavigationOptions { HistoryEntryState = "Other Internal Page State" }))">Navigation.NavigateTo()</button>
+    </div>
+    
+    <div class="nav-lock-unit">
+        <h4>External Site (Matt's Blog)</h4>
+        <a href="@StaticStrings.BlogUrl">Oh hey, it's my blog</a>
+        <button onclick="@(() => NavigationManager?.NavigateTo(StaticStrings.BlogUrl, new NavigationOptions { HistoryEntryState = "Blog State!"}))">
+            Navigation.NavigateTo()
+        </button>
+    </div>
+    
+</div>
+
+<LazyLogMessagesComponent LogMessageGroups="@LogMessageGroups"></LazyLogMessagesComponent>
