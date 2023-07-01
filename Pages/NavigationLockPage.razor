@@ -3,21 +3,22 @@
 
 @code {
     [Inject] NavigationManager? NavigationManager { get; set; }
+    [Inject] IJSRuntime? JsRuntime { get; set; }
     private bool ConfirmExternalNavigation { get; set; } = true;
-    private bool AllowNavigation { get; set; }
     private List<IEnumerable<string>> LogMessageGroups { get; } = new();
 
-    private void OnBeforeInternalNavigation(LocationChangingContext locationChangingContext)
+    private async Task OnBeforeInternalNavigation(LocationChangingContext locationChangingContext)
     {
         LogMessageGroups.LazyLog($"ConfirmExternalNavigation: {ConfirmExternalNavigation}",
-            $"AllowNavigation: {AllowNavigation}",
             $"TargetLocation: {locationChangingContext.TargetLocation}",
             $"IsNavigationIntercepted: {locationChangingContext.IsNavigationIntercepted}",
             $"HistoryEntryState: {locationChangingContext.HistoryEntryState}");
 
-        InvokeAsync(StateHasChanged);
-        
-        if (!AllowNavigation) locationChangingContext.PreventNavigation();
+        await InvokeAsync(StateHasChanged);
+
+        if (JsRuntime is null) return;
+        var continueNavigationEvent = await JsRuntime.InvokeAsync<bool>("confirm", "OnBeforeInternalNavigation caught this navigation event! Do you want to continue with your navigation event?");
+        if (!continueNavigationEvent) locationChangingContext.PreventNavigation();
     }
 }
 
@@ -33,11 +34,6 @@
         <div>
             <label for="confirm-external-navigation-checkbox">Confirm External Navigation</label>
             <input id="confirm-external-navigation-checkbox" type="checkbox" @bind="@ConfirmExternalNavigation">
-        </div>
-    
-        <div>
-            <label for="allow-navigation-checkbox">Allow Navigation</label>
-            <input id="allow-navigation-checkbox" type="checkbox" @bind="@AllowNavigation">
         </div>
     </div>
     

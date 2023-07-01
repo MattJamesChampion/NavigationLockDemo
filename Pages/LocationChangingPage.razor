@@ -5,7 +5,7 @@
 
 @code {
     [Inject] NavigationManager? NavigationManager { get; set; }
-    private bool AllowNavigation { get; set; }
+    [Inject] IJSRuntime? JsRuntime { get; set; }
     private List<IEnumerable<string>> LogMessageGroups { get; } = new();
     private IDisposable? EventHandler { get; set; }
 
@@ -26,18 +26,17 @@
         return ValueTask.CompletedTask;
     }
 
-    private ValueTask LocationChangingHandler(LocationChangingContext locationChangingContext)
+    private async ValueTask LocationChangingHandler(LocationChangingContext locationChangingContext)
     {
-        LogMessageGroups.LazyLog($"AllowNavigation: {AllowNavigation}",
-            $"TargetLocation: {locationChangingContext.TargetLocation}",
+        LogMessageGroups.LazyLog($"TargetLocation: {locationChangingContext.TargetLocation}",
             $"IsNavigationIntercepted: {locationChangingContext.IsNavigationIntercepted}",
             $"HistoryEntryState: {locationChangingContext.HistoryEntryState}");
 
-        InvokeAsync(StateHasChanged);
+        await InvokeAsync(StateHasChanged);
 
-        if (!AllowNavigation) locationChangingContext.PreventNavigation();
-        
-        return ValueTask.CompletedTask;
+        if (JsRuntime is null) return;
+        var continueNavigationEvent = await JsRuntime.InvokeAsync<bool>("confirm", "LocationChangingHandler caught this navigation event! Do you want to continue with your navigation event?");
+        if (!continueNavigationEvent) locationChangingContext.PreventNavigation();
     }
 }
 
@@ -46,14 +45,6 @@
 <h3>Location Changing Demo</h3>
 
 <div class="nav-lock-group">
-    <div class="nav-lock-unit">
-        <h4>Controls</h4>
-        <div>
-            <label for="allow-navigation-checkbox">Allow Navigation</label>
-            <input id="allow-navigation-checkbox" type="checkbox" @bind="@AllowNavigation">
-        </div>
-    </div>
-    
     <div class="nav-lock-unit">
         <h4>Internal Site</h4>
         <a href="/OtherInternalPage">To another internal page!</a>
