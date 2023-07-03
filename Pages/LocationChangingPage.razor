@@ -35,7 +35,7 @@
         await InvokeAsync(StateHasChanged);
 
         if (JsRuntime is null) return;
-        var continueNavigationEvent = await JsRuntime.InvokeAsync<bool>("confirm", $"{nameof(LocationChangingHandler)} caught this navigation event! Do you want to continue with your navigation event?");
+        var continueNavigationEvent = await JsRuntime.InvokeAsync<bool>("confirm", $"{nameof(LocationChangingHandler)} caught this navigation event! Do you want to continue?");
         if (!continueNavigationEvent) locationChangingContext.PreventNavigation();
     }
 }
